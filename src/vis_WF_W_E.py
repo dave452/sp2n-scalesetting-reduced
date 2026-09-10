@@ -20,6 +20,7 @@ parser.add_argument("TE", type=float)
 parser.add_argument("WE", type=float)
 parser.add_argument("infiles", nargs="+")
 parser.add_argument("--outfile", required=True)
+parser.add_argument("--group", type=str, default="SPN")
 parser.add_argument("--absolute_scales", action="store_true")
 parser.add_argument("--pickle_dir", default="pkl_flows_bs")
 args = parser.parse_args()
@@ -29,12 +30,15 @@ outdir = os.environ.get("PLOT_DIR", ".")
 fig, ax = plt.subplots(2, 1, sharex=True)
 for faddr in args.infiles:
     N, L, beta, rawdata = es.topo_load_raw_data(faddr)
-    if args.absolute_scales:
-        TE_scaled = args.TE
-        WE_scaled = args.WE
-    else:
+    if args.group == "SPN":
         TE_scaled = args.TE * es.Casimir_SP(N)
         WE_scaled = args.WE * es.Casimir_SP(N)
+    elif args.group == "SUN":
+        TE_scaled = args.TE * es.Casimir_SUN(N)
+        WE_scaled = args.WE * es.Casimir_SUN(N)
+    else:
+        TE_scaled = args.TE
+        WE_scaled = args.WE 
 
     print("loading flow files")
     fn_bs = args.pickle_dir + "/pkl_bs_" + N + "_" + L + "_" + beta + "_"
@@ -63,21 +67,22 @@ for faddr in args.infiles:
         plot_flow["t"],
         y1=(plot_flow["flow"] + plot_flow["err"]),
         y2=(plot_flow["flow"] - plot_flow["err"]),
-        label=lab0,
         color=color0,
         alpha=0.5,
     )
     color1 = next(plt.gca()._get_lines.prop_cycler)["color"]
     lab1 = r"$N_c=" + str(int(N)) + "$, $\\beta=" + str(beta) + "$, cl."
     lab1 = "$\\beta=" + str(beta) + "$, cl."
+    
     plot_flow = es.avg_flows(bs_flow_E)
     ax[0].fill_between(
         plot_flow["t"],
         y1=(plot_flow["flow"] + plot_flow["err"]),
         y2=(plot_flow["flow"] - plot_flow["err"]),
         label=lab1,
-        color=color1,
+        color=color0,
         alpha=0.5,
+        ls= '--',
     )
     ax[0].legend(bbox_to_anchor=(1.0, 1.0), loc="upper left", frameon=False)
 
@@ -89,9 +94,9 @@ for faddr in args.infiles:
         plot_flow["t"],
         y1=(plot_flow["flow"] + plot_flow["err"]),
         y2=(plot_flow["flow"] - plot_flow["err"]),
-        label=lab0,
         color=color0,
         alpha=0.5,
+        
     )
     plot_flow = es.avg_flows(w0_flow_E)
     ax[1].fill_between(
@@ -99,8 +104,9 @@ for faddr in args.infiles:
         y1=(plot_flow["flow"] + plot_flow["err"]),
         y2=(plot_flow["flow"] - plot_flow["err"]),
         label=lab1,
-        color=color1,
+        color=color0,
         alpha=0.5,
+        ls= '--',
     )
     ax[1].legend(bbox_to_anchor=(1.0, 1.0), loc="upper left", frameon=False)
 plt.tight_layout()
